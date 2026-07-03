@@ -1,0 +1,189 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Eclipse Protocol tokens */
+  --color-eclipse-bg: var(--eclipse-bg);
+  --color-eclipse-surface: var(--eclipse-surface);
+  --color-eclipse-surface-2: var(--eclipse-surface-2);
+  --color-eclipse-purple: var(--eclipse-purple);
+  --color-eclipse-purple-bright: var(--eclipse-purple-bright);
+  --color-eclipse-gold: var(--eclipse-gold);
+  --color-eclipse-teal: var(--eclipse-teal);
+  --color-eclipse-danger: var(--eclipse-danger);
+  --color-eclipse-text: var(--eclipse-text);
+  --color-eclipse-muted: var(--eclipse-muted);
+  --color-eclipse-border: var(--eclipse-border);
+
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.875rem;
+
+  --eclipse-bg: #0A0710;
+  --eclipse-surface: #0E0B16;
+  --eclipse-surface-2: #120E1F;
+  --eclipse-purple: #8B5CF6;
+  --eclipse-purple-bright: #A855F7;
+  --eclipse-gold: #F5B942;
+  --eclipse-teal: #34D399;
+  --eclipse-danger: #F87171;
+  --eclipse-text: #F5F3F7;
+  --eclipse-muted: #9B94A8;
+  --eclipse-border: rgba(255, 255, 255, 0.08);
+
+  --background: var(--eclipse-bg);
+  --foreground: var(--eclipse-text);
+  --card: var(--eclipse-surface);
+  --card-foreground: var(--eclipse-text);
+  --popover: var(--eclipse-surface-2);
+  --popover-foreground: var(--eclipse-text);
+  --primary: var(--eclipse-purple);
+  --primary-foreground: #ffffff;
+  --secondary: var(--eclipse-surface-2);
+  --secondary-foreground: var(--eclipse-text);
+  --muted: var(--eclipse-surface-2);
+  --muted-foreground: var(--eclipse-muted);
+  --accent: var(--eclipse-purple);
+  --accent-foreground: #ffffff;
+  --destructive: var(--eclipse-danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--eclipse-border);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: var(--eclipse-purple);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body {
+    background-color: var(--eclipse-bg);
+    color: var(--eclipse-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .font-mono, code, pre, kbd { font-family: var(--font-mono); }
+
+  ::selection { background: color-mix(in oklab, var(--eclipse-purple) 40%, transparent); color: white; }
+}
+
+/* Background: subtle starfield + noise */
+.eclipse-page-bg {
+  background-color: var(--eclipse-bg);
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, rgba(139, 92, 246, 0.18), transparent 60%),
+    radial-gradient(800px 500px at 90% 10%, rgba(245, 185, 66, 0.06), transparent 60%),
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.03) 1px, transparent 1.2px),
+    radial-gradient(circle at 70% 80%, rgba(255,255,255,0.025) 1px, transparent 1.2px);
+  background-size: auto, auto, 3px 3px, 4px 4px;
+}
+
+.eclipse-grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Corona glow */
+.eclipse-corona {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side at 50% 40%, rgba(168, 85, 247, 0.35), rgba(139, 92, 246, 0.15) 40%, transparent 70%);
+  filter: blur(20px);
+}
+
+/* Glass card */
+@utility glass-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border: 1px solid var(--eclipse-border);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-xl);
+  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+@utility glass-card-hover {
+  &:hover {
+    border-color: color-mix(in oklab, var(--eclipse-purple) 45%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--eclipse-purple) 25%, transparent),
+                0 10px 40px -10px color-mix(in oklab, var(--eclipse-purple) 40%, transparent);
+  }
+}
+
+@utility text-gradient-eclipse {
+  background: linear-gradient(135deg, #F5F3F7 0%, #C4B5FD 50%, #F5B942 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility glow-purple {
+  box-shadow: 0 0 24px -4px color-mix(in oklab, var(--eclipse-purple) 60%, transparent);
+}
+
+/* Live pulse dot */
+@keyframes eclipse-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.35); }
+}
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--eclipse-teal);
+  box-shadow: 0 0 12px var(--eclipse-teal);
+}
+.live-dot::after {
+  content: "";
+  position: absolute; inset: -3px;
+  border-radius: 999px;
+  background: var(--eclipse-teal);
+  opacity: 0.4;
+  animation: eclipse-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 40s linear infinite;
+}
+
+/* Eclipse ring SVG helper */
+.eclipse-ring-glow {
+  filter: drop-shadow(0 0 24px rgba(168, 85, 247, 0.55)) drop-shadow(0 0 60px rgba(139, 92, 246, 0.35));
+}
