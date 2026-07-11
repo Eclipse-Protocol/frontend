@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useAccount, useConnect } from "wagmi";
 import { AppShell } from "@/components/eclipse/AppShell";
 import { StatCard } from "@/components/eclipse/StatCard";
 import { PerformanceChart } from "@/components/eclipse/PerformanceChart";
 import { mockPositions, mockTransactions, mockVaults } from "@/lib/mock-data";
+import { coston2 } from "@/lib/wagmi";
 import { Wallet } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,9 +23,10 @@ export const Route = createFileRoute("/dashboard")({
 const fmtUSD = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
 function Dashboard() {
-  const [connected, setConnected] = useState(false);
+  const { address, isConnected } = useAccount();
+  const { connectors, connect, isPending } = useConnect();
 
-  if (!connected) {
+  if (!isConnected) {
     return (
       <AppShell>
         <div className="mx-auto flex max-w-md flex-col items-center px-6 py-32 text-center">
@@ -37,13 +39,16 @@ function Dashboard() {
               Sign in to view your Eclipse Protocol positions, performance, and transaction history.
             </p>
             <button
-              onClick={() => {
-                setConnected(true);
-                toast.success("Wallet connected", { description: "0x8f2a...c91b" });
-              }}
-              className="mt-6 w-full rounded-lg bg-eclipse-purple py-2.5 text-sm font-medium text-white glow-purple hover:bg-eclipse-purple-bright"
+              disabled={isPending || connectors.length === 0}
+              onClick={() =>
+                connect(
+                  { connector: connectors[0], chainId: coston2.id },
+                  { onError: (err) => toast.error("Connection failed", { description: err.message }) },
+                )
+              }
+              className="mt-6 w-full rounded-lg bg-eclipse-purple py-2.5 text-sm font-medium text-white glow-purple hover:bg-eclipse-purple-bright disabled:opacity-60"
             >
-              Connect Wallet
+              {connectors.length === 0 ? "No wallet detected" : isPending ? "Connecting…" : "Connect Wallet"}
             </button>
           </div>
         </div>
@@ -67,7 +72,9 @@ function Dashboard() {
       <div className="mx-auto max-w-7xl px-6 pt-12">
         <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-eclipse-gold">Investor</div>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-eclipse-text">Portfolio</h1>
-        <p className="mt-2 text-eclipse-muted">Connected as <span className="font-mono">0x8f2a…c91b</span></p>
+        <p className="mt-2 text-eclipse-muted">
+          Connected as <span className="font-mono">{address}</span>
+        </p>
       </div>
 
       <div className="mx-auto mt-8 grid max-w-7xl gap-4 px-6 md:grid-cols-4">

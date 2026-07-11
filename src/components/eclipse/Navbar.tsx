@@ -1,9 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { EclipseMark } from "./EclipseMark";
-import { Menu, X, Wallet } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { WalletButton } from "./WalletButton";
 
 const links = [
   { to: "/vaults", label: "Vaults" },
@@ -14,13 +14,7 @@ const links = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const [connected, setConnected] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  function connect() {
-    setConnected(true);
-    toast.success("Wallet connected", { description: "0x8f2a...c91b" });
-  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-eclipse-border bg-eclipse-bg/70 backdrop-blur-xl">
@@ -50,18 +44,7 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={connect}
-            className={cn(
-              "hidden md:inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition-all",
-              connected
-                ? "border-eclipse-teal/40 bg-eclipse-teal/10 text-eclipse-teal"
-                : "border-eclipse-purple/50 bg-eclipse-purple/10 text-eclipse-text hover:bg-eclipse-purple/20 glow-purple",
-            )}
-          >
-            <Wallet className="h-4 w-4" />
-            {connected ? "0x8f2a…c91b" : "Connect Wallet"}
-          </button>
+          <WalletButton className="hidden md:inline-flex" />
           <button
             className="rounded-md border border-eclipse-border p-2 text-eclipse-text md:hidden"
             onClick={() => setOpen((v) => !v)}
@@ -85,13 +68,7 @@ export function Navbar() {
                 {l.label}
               </Link>
             ))}
-            <button
-              onClick={() => { connect(); setOpen(false); }}
-              className="mt-2 inline-flex items-center gap-2 rounded-lg border border-eclipse-purple/50 bg-eclipse-purple/10 px-3.5 py-2 text-sm font-medium text-eclipse-text"
-            >
-              <Wallet className="h-4 w-4" />
-              {connected ? "0x8f2a…c91b" : "Connect Wallet"}
-            </button>
+            <WalletButton className="mt-2 w-full justify-center" />
           </nav>
         </div>
       )}

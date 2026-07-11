@@ -21,6 +21,8 @@ export interface Vault {
   performanceFee: number;
   maxPosition: number;
   drawdownBreaker: number;
+  /** True for the one real, on-chain AlphaVault deployment — the detail page fetches live contract data for it. */
+  isLive?: boolean;
 }
 
 export interface Trade {

@@ -5,7 +5,17 @@ import { AttestationBadge } from "@/components/eclipse/AttestationBadge";
 import { LiveIndicator } from "@/components/eclipse/LiveIndicator";
 import { PerformanceChart } from "@/components/eclipse/PerformanceChart";
 import { StatCard } from "@/components/eclipse/StatCard";
+import {
+  LiveHeaderMeta,
+  LiveStatCards,
+  LiveMetadataRows,
+  LivePerformanceLedger,
+  LiveTradeFeedNotice,
+  LiveDepositPanel,
+} from "@/components/eclipse/LiveVault";
 import { getVault, mockEpochs, mockTrades } from "@/lib/mock-data";
+import { useReadContract } from "wagmi";
+import { ALPHA_VAULT, ENCLAVE_REGISTRY } from "@/lib/contracts";
 import { ArrowLeft, ArrowDownRight, ArrowUpRight, ExternalLink, Lock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -59,11 +69,17 @@ function VaultDetail() {
               <LiveIndicator />
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-eclipse-muted">
-              <span>{vault.assetPair}</span>
-              <span>·</span>
-              <span>{vault.riskTier}</span>
-              <span>·</span>
-              <span className="font-mono text-xs">Strategist {vault.strategist}</span>
+              {vault.isLive ? (
+                <LiveHeaderMeta />
+              ) : (
+                <>
+                  <span>{vault.assetPair}</span>
+                  <span>·</span>
+                  <span>{vault.riskTier}</span>
+                  <span>·</span>
+                  <span className="font-mono text-xs">Strategist {vault.strategist}</span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -80,40 +96,55 @@ function VaultDetail() {
 
       <div className="mx-auto mt-8 grid max-w-7xl gap-6 px-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <div className="glass-card p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-wider text-eclipse-muted">NAV Performance</div>
-                <div className="mt-1 font-mono text-2xl text-eclipse-text">
-                  {chartData.at(-1)?.nav.toFixed(4)}
+          {vault.isLive ? (
+            <div className="glass-card p-5">
+              <div className="text-xs uppercase tracking-wider text-eclipse-muted">NAV Performance</div>
+              <p className="mt-2 max-w-lg text-sm text-eclipse-muted">
+                On-chain price-per-share history builds up as{" "}
+                <code className="rounded bg-eclipse-bg/60 px-1 py-0.5 text-eclipse-purple">PerformanceLedger.commitEpoch()</code> runs.
+                See current price per share and epoch history below.
+              </p>
+            </div>
+          ) : (
+            <div className="glass-card p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-eclipse-muted">NAV Performance</div>
+                  <div className="mt-1 font-mono text-2xl text-eclipse-text">
+                    {chartData.at(-1)?.nav.toFixed(4)}
+                  </div>
+                </div>
+                <div className="inline-flex rounded-lg border border-eclipse-border bg-eclipse-surface p-1">
+                  {(["24h", "7d", "30d", "All"] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setRange(r)}
+                      className={cn(
+                        "rounded-md px-3 py-1 text-xs",
+                        range === r ? "bg-eclipse-purple/20 text-eclipse-text" : "text-eclipse-muted hover:text-eclipse-text",
+                      )}
+                    >
+                      {r}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="inline-flex rounded-lg border border-eclipse-border bg-eclipse-surface p-1">
-                {(["24h", "7d", "30d", "All"] as const).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRange(r)}
-                    className={cn(
-                      "rounded-md px-3 py-1 text-xs",
-                      range === r ? "bg-eclipse-purple/20 text-eclipse-text" : "text-eclipse-muted hover:text-eclipse-text",
-                    )}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
+              <PerformanceChart data={chartData} />
             </div>
-            <PerformanceChart data={chartData} />
-          </div>
+          )}
 
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            <StatCard label="TVL" value={fmtUSD(vault.tvl)} />
-            <StatCard label="All-time return" value={`+${vault.perfAll.toFixed(2)}%`} delta={vault.perfAll} />
-            <StatCard label="Current epoch P&L" value={`${vault.epochPnl >= 0 ? "+" : ""}${vault.epochPnl.toFixed(2)}%`} delta={vault.epochPnl} />
-            <StatCard label="Strategist bond" value={fmtUSD(vault.bond)} hint="At risk of slashing" />
-            <StatCard label="Max drawdown" value={`${vault.maxDrawdown.toFixed(2)}%`} />
-            <StatCard label="APY (30d ann.)" value={`${vault.apy.toFixed(1)}%`} />
-          </div>
+          {vault.isLive ? (
+            <LiveStatCards />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <StatCard label="TVL" value={fmtUSD(vault.tvl)} />
+              <StatCard label="All-time return" value={`+${vault.perfAll.toFixed(2)}%`} delta={vault.perfAll} />
+              <StatCard label="Current epoch P&L" value={`${vault.epochPnl >= 0 ? "+" : ""}${vault.epochPnl.toFixed(2)}%`} delta={vault.epochPnl} />
+              <StatCard label="Strategist bond" value={fmtUSD(vault.bond)} hint="At risk of slashing" />
+              <StatCard label="Max drawdown" value={`${vault.maxDrawdown.toFixed(2)}%`} />
+              <StatCard label="APY (30d ann.)" value={`${vault.apy.toFixed(1)}%`} />
+            </div>
+          )}
 
           {/* Live Trade Feed */}
           <div className="glass-card overflow-hidden">
@@ -124,46 +155,50 @@ function VaultDetail() {
               </div>
               <LiveIndicator />
             </div>
-            <div className="max-h-[420px] overflow-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-eclipse-surface/60 text-[11px] uppercase tracking-wider text-eclipse-muted">
-                  <tr>
-                    <th className="px-5 py-2 font-medium">Time</th>
-                    <th className="px-3 py-2 font-medium">Side</th>
-                    <th className="px-3 py-2 font-medium">Pair</th>
-                    <th className="px-3 py-2 font-medium text-right">Size</th>
-                    <th className="px-3 py-2 font-medium">Tx</th>
-                    <th className="px-5 py-2 font-medium">Sig</th>
-                  </tr>
-                </thead>
-                <tbody className="font-mono text-xs">
-                  {trades.map((t) => (
-                    <tr key={t.id} className="border-t border-eclipse-border/70 hover:bg-eclipse-purple/5">
-                      <td className="px-5 py-2.5 text-eclipse-muted">{new Date(t.ts).toLocaleTimeString()}</td>
-                      <td className="px-3 py-2.5">
-                        <span className={cn("inline-flex items-center gap-1", t.side === "BUY" ? "text-eclipse-teal" : "text-eclipse-danger")}>
-                          {t.side === "BUY" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                          {t.side}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-eclipse-text">{t.pair}</td>
-                      <td className="px-3 py-2.5 text-right text-eclipse-text">${t.size.toLocaleString()}</td>
-                      <td className="px-3 py-2.5">
-                        <a href="#" className="inline-flex items-center gap-1 text-eclipse-purple hover:underline">
-                          {t.txHash.slice(0, 8)}…{t.txHash.slice(-4)}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </td>
-                      <td className="px-5 py-2.5">
-                        <span className="inline-flex items-center gap-1 text-eclipse-purple">
-                          <Lock className="h-3 w-3" /> verified
-                        </span>
-                      </td>
+            {vault.isLive ? (
+              <LiveTradeFeedNotice />
+            ) : (
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-eclipse-surface/60 text-[11px] uppercase tracking-wider text-eclipse-muted">
+                    <tr>
+                      <th className="px-5 py-2 font-medium">Time</th>
+                      <th className="px-3 py-2 font-medium">Side</th>
+                      <th className="px-3 py-2 font-medium">Pair</th>
+                      <th className="px-3 py-2 font-medium text-right">Size</th>
+                      <th className="px-3 py-2 font-medium">Tx</th>
+                      <th className="px-5 py-2 font-medium">Sig</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="font-mono text-xs">
+                    {trades.map((t) => (
+                      <tr key={t.id} className="border-t border-eclipse-border/70 hover:bg-eclipse-purple/5">
+                        <td className="px-5 py-2.5 text-eclipse-muted">{new Date(t.ts).toLocaleTimeString()}</td>
+                        <td className="px-3 py-2.5">
+                          <span className={cn("inline-flex items-center gap-1", t.side === "BUY" ? "text-eclipse-teal" : "text-eclipse-danger")}>
+                            {t.side === "BUY" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                            {t.side}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-eclipse-text">{t.pair}</td>
+                        <td className="px-3 py-2.5 text-right text-eclipse-text">${t.size.toLocaleString()}</td>
+                        <td className="px-3 py-2.5">
+                          <a href="#" className="inline-flex items-center gap-1 text-eclipse-purple hover:underline">
+                            {t.txHash.slice(0, 8)}…{t.txHash.slice(-4)}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </td>
+                        <td className="px-5 py-2.5">
+                          <span className="inline-flex items-center gap-1 text-eclipse-purple">
+                            <Lock className="h-3 w-3" /> verified
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Performance ledger */}
@@ -178,46 +213,56 @@ function VaultDetail() {
                 <span className="hidden text-xs text-eclipse-muted group-open:inline">collapse</span>
               </div>
             </summary>
-            <div className="max-h-[360px] overflow-auto border-t border-eclipse-border">
-              <table className="w-full text-left font-mono text-xs">
-                <thead className="bg-eclipse-surface/60 text-[10px] uppercase tracking-wider text-eclipse-muted">
-                  <tr>
-                    <th className="px-5 py-2 font-medium">Epoch</th>
-                    <th className="px-3 py-2 font-medium">Time</th>
-                    <th className="px-3 py-2 font-medium text-right">NAV</th>
-                    <th className="px-3 py-2 font-medium">Prev hash</th>
-                    <th className="px-5 py-2 font-medium">Hash</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {epochs.map((e) => (
-                    <tr key={e.epoch} className="border-t border-eclipse-border/70">
-                      <td className="px-5 py-2 text-eclipse-gold">#{e.epoch}</td>
-                      <td className="px-3 py-2 text-eclipse-muted">{new Date(e.ts).toLocaleString()}</td>
-                      <td className="px-3 py-2 text-right text-eclipse-text">{e.nav.toFixed(6)}</td>
-                      <td className="px-3 py-2 text-eclipse-muted">{e.prevHash}</td>
-                      <td className="px-5 py-2 text-eclipse-purple">{e.hash}</td>
+            {vault.isLive ? (
+              <div className="border-t border-eclipse-border">
+                <LivePerformanceLedger />
+              </div>
+            ) : (
+              <div className="max-h-[360px] overflow-auto border-t border-eclipse-border">
+                <table className="w-full text-left font-mono text-xs">
+                  <thead className="bg-eclipse-surface/60 text-[10px] uppercase tracking-wider text-eclipse-muted">
+                    <tr>
+                      <th className="px-5 py-2 font-medium">Epoch</th>
+                      <th className="px-3 py-2 font-medium">Time</th>
+                      <th className="px-3 py-2 font-medium text-right">NAV</th>
+                      <th className="px-3 py-2 font-medium">Prev hash</th>
+                      <th className="px-5 py-2 font-medium">Hash</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {epochs.map((e) => (
+                      <tr key={e.epoch} className="border-t border-eclipse-border/70">
+                        <td className="px-5 py-2 text-eclipse-gold">#{e.epoch}</td>
+                        <td className="px-3 py-2 text-eclipse-muted">{new Date(e.ts).toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-eclipse-text">{e.nav.toFixed(6)}</td>
+                        <td className="px-3 py-2 text-eclipse-muted">{e.prevHash}</td>
+                        <td className="px-5 py-2 text-eclipse-purple">{e.hash}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </details>
 
           <div className="glass-card p-5">
             <div className="text-sm font-semibold text-eclipse-text">Risk parameters</div>
-            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Row k="Max position size" v={`${vault.maxPosition}% of TVL`} />
-              <Row k="Drawdown circuit breaker" v={`${vault.drawdownBreaker}% halts trading`} />
-              <Row k="Management fee" v={`${vault.managementFee}% annual`} />
-              <Row k="Performance fee" v={`${vault.performanceFee}% of profits`} />
-            </dl>
+            {vault.isLive ? (
+              <LiveMetadataRows />
+            ) : (
+              <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Row k="Max position size" v={`${vault.maxPosition}% of TVL`} />
+                <Row k="Drawdown circuit breaker" v={`${vault.drawdownBreaker}% halts trading`} />
+                <Row k="Management fee" v={`${vault.managementFee}% annual`} />
+                <Row k="Performance fee" v={`${vault.performanceFee}% of profits`} />
+              </dl>
+            )}
           </div>
         </div>
 
         {/* Right: deposit/withdraw */}
         <aside className="space-y-6">
-          <DepositPanel vault={vault} />
+          {vault.isLive ? <LiveDepositPanel /> : <DepositPanel vault={vault} />}
         </aside>
       </div>
 
@@ -316,9 +361,16 @@ function ProofModal({
   vault,
   onClose,
 }: {
-  vault: { name: string; teeType: string; attestationId: string; attestationAgeSec: number };
+  vault: { name: string; teeType: string; attestationId: string; attestationAgeSec: number; isLive?: boolean };
   onClose: () => void;
 }) {
+  const signer = useReadContract({
+    ...ENCLAVE_REGISTRY,
+    functionName: "signerOf",
+    args: [ALPHA_VAULT.address],
+    query: { enabled: !!vault.isLive },
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -336,19 +388,34 @@ function ProofModal({
           </button>
         </div>
 
-        <dl className="mt-5 space-y-3 font-mono text-xs">
-          <ProofRow k="TEE type" v={vault.teeType} />
-          <ProofRow k="Attestation ID" v={vault.attestationId} />
-          <ProofRow k="Timestamp" v={`${vault.attestationAgeSec}s ago`} />
-          <ProofRow k="Code measurement" v="0x9f21e3a44c8b7d2e01f6...b19c" />
-          <ProofRow k="Enclave pubkey" v="0x03a5c9...ef42" />
-          <ProofRow k="FDC verification tx" v="0xc12a...4477" link />
-        </dl>
-
-        <div className="mt-5 rounded-lg border border-eclipse-purple/30 bg-eclipse-purple/10 p-3 text-xs text-eclipse-text">
-          This proves the <span className="text-eclipse-purple">exact strategy code</span> that ran inside the enclave,
-          without revealing what it contains.
-        </div>
+        {vault.isLive ? (
+          <>
+            <dl className="mt-5 space-y-3 font-mono text-xs">
+              <ProofRow k="Enclave signer (EnclaveRegistry.signerOf)" v={signer.isLoading ? "Loading…" : signer.data ?? "Not registered"} />
+              <ProofRow k="AlphaVault" v={ALPHA_VAULT.address} />
+            </dl>
+            <div className="mt-5 rounded-lg border border-eclipse-purple/30 bg-eclipse-purple/10 p-3 text-xs text-eclipse-text">
+              This is the enclave signer address registered on-chain via a real FDC Web2Json attestation. Trade instructions
+              submitted to this vault must be signed by this key. Code measurement and per-attestation FDC tx hash aren't
+              stored on-chain by the current contracts, so they can't be displayed here yet.
+            </div>
+          </>
+        ) : (
+          <>
+            <dl className="mt-5 space-y-3 font-mono text-xs">
+              <ProofRow k="TEE type" v={vault.teeType} />
+              <ProofRow k="Attestation ID" v={vault.attestationId} />
+              <ProofRow k="Timestamp" v={`${vault.attestationAgeSec}s ago`} />
+              <ProofRow k="Code measurement" v="0x9f21e3a44c8b7d2e01f6...b19c" />
+              <ProofRow k="Enclave pubkey" v="0x03a5c9...ef42" />
+              <ProofRow k="FDC verification tx" v="0xc12a...4477" link />
+            </dl>
+            <div className="mt-5 rounded-lg border border-eclipse-purple/30 bg-eclipse-purple/10 p-3 text-xs text-eclipse-text">
+              This proves the <span className="text-eclipse-purple">exact strategy code</span> that ran inside the enclave,
+              without revealing what it contains.
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

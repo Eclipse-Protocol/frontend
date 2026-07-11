@@ -17,7 +17,35 @@ function seededSeries(seed: number, len: number, base: number, vol: number) {
   return out;
 }
 
+export const LIVE_VAULT_ID = "eclipse-alpha-vault";
+
 export const mockVaults: Vault[] = [
+  {
+    id: LIVE_VAULT_ID,
+    name: "Eclipse Alpha Vault",
+    strategist: "—",
+    assetPair: "Coston2 Testnet",
+    tvl: 0,
+    apy: 0,
+    perf30d: 0,
+    perfAll: 0,
+    epochPnl: 0,
+    maxDrawdown: 0,
+    bond: 0,
+    riskTier: "Balanced",
+    teeType: "AMD SEV-SNP",
+    attestationId: "—",
+    attestationAgeSec: 0,
+    navHistory: [
+      { t: new Date(Date.now() - 3600_000).toISOString(), nav: 1 },
+      { t: new Date().toISOString(), nav: 1 },
+    ],
+    managementFee: 0,
+    performanceFee: 0,
+    maxPosition: 0,
+    drawdownBreaker: 0,
+    isLive: true,
+  },
   {
     id: "momentum-alpha-1",
     name: "Momentum Alpha #1",
