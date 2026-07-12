@@ -1,17 +1,33 @@
+import { Link } from "@tanstack/react-router";
 import { EclipseMark } from "./EclipseMark";
 
 const columns = [
   {
     title: "Protocol",
-    links: ["Overview", "Vaults", "Strategists", "Ledger"],
+    links: [
+      { label: "Overview", to: "/docs" },
+      { label: "Vaults", to: "/vaults" },
+      { label: "Strategists", to: "/strategist" },
+      { label: "Ledger", to: "/docs/trust" },
+    ],
   },
   {
     title: "Developers",
-    links: ["Contracts", "Enclave runtime", "Relayer", "FDC integration"],
+    links: [
+      { label: "Architecture", to: "/docs/architecture" },
+      { label: "How it works", to: "/docs/how-it-works" },
+      { label: "Fee model", to: "/docs/fees" },
+      { label: "Roadmap", to: "/docs/roadmap" },
+    ],
   },
   {
     title: "Resources",
-    links: ["Whitepaper", "Attestation", "Github", "Discord"],
+    links: [
+      { label: "Docs", to: "/docs" },
+      { label: "GitHub", href: "https://github.com/Eclipse-Protocol" },
+      { label: "X / Twitter", href: "https://x.com/Eclipse_Protocol" },
+      { label: "Launch app", href: "https://eclipse-protocol-delta.vercel.app/" },
+    ],
   },
 ];
 
@@ -37,10 +53,16 @@ export function Footer() {
               </div>
               <ul className="space-y-2 text-eclipse-text/80">
                 {col.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="hover:text-eclipse-text">
-                      {link}
-                    </a>
+                  <li key={link.label}>
+                    {"to" in link ? (
+                      <Link to={link.to} className="hover:text-eclipse-text">
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a href={link.href} target="_blank" rel="noreferrer" className="hover:text-eclipse-text">
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

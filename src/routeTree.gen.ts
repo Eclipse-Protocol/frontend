@@ -10,15 +10,27 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StrategistRouteImport } from './routes/strategist'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DeployRouteImport } from './routes/deploy'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VaultsIndexRouteImport } from './routes/vaults.index'
+import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as VaultsIdRouteImport } from './routes/vaults.$id'
+import { Route as DocsTrustRouteImport } from './routes/docs.trust'
+import { Route as DocsRoadmapRouteImport } from './routes/docs.roadmap'
+import { Route as DocsHowItWorksRouteImport } from './routes/docs.how-it-works'
+import { Route as DocsFeesRouteImport } from './routes/docs.fees'
+import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
 
 const StrategistRoute = StrategistRouteImport.update({
   id: '/strategist',
   path: '/strategist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeployRoute = DeployRouteImport.update({
@@ -41,18 +53,55 @@ const VaultsIndexRoute = VaultsIndexRouteImport.update({
   path: '/vaults/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsIndexRoute = DocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DocsRoute,
+} as any)
 const VaultsIdRoute = VaultsIdRouteImport.update({
   id: '/vaults/$id',
   path: '/vaults/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DocsTrustRoute = DocsTrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsRoadmapRoute = DocsRoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsHowItWorksRoute = DocsHowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsFeesRoute = DocsFeesRouteImport.update({
+  id: '/fees',
+  path: '/fees',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsArchitectureRoute = DocsArchitectureRouteImport.update({
+  id: '/architecture',
+  path: '/architecture',
+  getParentRoute: () => DocsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/deploy': typeof DeployRoute
+  '/docs': typeof DocsRouteWithChildren
   '/strategist': typeof StrategistRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/fees': typeof DocsFeesRoute
+  '/docs/how-it-works': typeof DocsHowItWorksRoute
+  '/docs/roadmap': typeof DocsRoadmapRoute
+  '/docs/trust': typeof DocsTrustRoute
   '/vaults/$id': typeof VaultsIdRoute
+  '/docs/': typeof DocsIndexRoute
   '/vaults/': typeof VaultsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -60,7 +109,13 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/deploy': typeof DeployRoute
   '/strategist': typeof StrategistRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/fees': typeof DocsFeesRoute
+  '/docs/how-it-works': typeof DocsHowItWorksRoute
+  '/docs/roadmap': typeof DocsRoadmapRoute
+  '/docs/trust': typeof DocsTrustRoute
   '/vaults/$id': typeof VaultsIdRoute
+  '/docs': typeof DocsIndexRoute
   '/vaults': typeof VaultsIndexRoute
 }
 export interface FileRoutesById {
@@ -68,23 +123,61 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/deploy': typeof DeployRoute
+  '/docs': typeof DocsRouteWithChildren
   '/strategist': typeof StrategistRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/fees': typeof DocsFeesRoute
+  '/docs/how-it-works': typeof DocsHowItWorksRoute
+  '/docs/roadmap': typeof DocsRoadmapRoute
+  '/docs/trust': typeof DocsTrustRoute
   '/vaults/$id': typeof VaultsIdRoute
+  '/docs/': typeof DocsIndexRoute
   '/vaults/': typeof VaultsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/dashboard' | '/deploy' | '/strategist' | '/vaults/$id' | '/vaults/'
+    | '/'
+    | '/dashboard'
+    | '/deploy'
+    | '/docs'
+    | '/strategist'
+    | '/docs/architecture'
+    | '/docs/fees'
+    | '/docs/how-it-works'
+    | '/docs/roadmap'
+    | '/docs/trust'
+    | '/vaults/$id'
+    | '/docs/'
+    | '/vaults/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/deploy' | '/strategist' | '/vaults/$id' | '/vaults'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/deploy'
+    | '/strategist'
+    | '/docs/architecture'
+    | '/docs/fees'
+    | '/docs/how-it-works'
+    | '/docs/roadmap'
+    | '/docs/trust'
+    | '/vaults/$id'
+    | '/docs'
+    | '/vaults'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/deploy'
+    | '/docs'
     | '/strategist'
+    | '/docs/architecture'
+    | '/docs/fees'
+    | '/docs/how-it-works'
+    | '/docs/roadmap'
+    | '/docs/trust'
     | '/vaults/$id'
+    | '/docs/'
     | '/vaults/'
   fileRoutesById: FileRoutesById
 }
@@ -92,6 +185,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   DeployRoute: typeof DeployRoute
+  DocsRoute: typeof DocsRouteWithChildren
   StrategistRoute: typeof StrategistRoute
   VaultsIdRoute: typeof VaultsIdRoute
   VaultsIndexRoute: typeof VaultsIndexRoute
@@ -104,6 +198,13 @@ declare module '@tanstack/react-router' {
       path: '/strategist'
       fullPath: '/strategist'
       preLoaderRoute: typeof StrategistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deploy': {
@@ -134,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VaultsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/': {
+      id: '/docs/'
+      path: '/'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof DocsIndexRouteImport
+      parentRoute: typeof DocsRoute
+    }
     '/vaults/$id': {
       id: '/vaults/$id'
       path: '/vaults/$id'
@@ -141,13 +249,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VaultsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/trust': {
+      id: '/docs/trust'
+      path: '/trust'
+      fullPath: '/docs/trust'
+      preLoaderRoute: typeof DocsTrustRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/roadmap': {
+      id: '/docs/roadmap'
+      path: '/roadmap'
+      fullPath: '/docs/roadmap'
+      preLoaderRoute: typeof DocsRoadmapRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/how-it-works': {
+      id: '/docs/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/docs/how-it-works'
+      preLoaderRoute: typeof DocsHowItWorksRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/fees': {
+      id: '/docs/fees'
+      path: '/fees'
+      fullPath: '/docs/fees'
+      preLoaderRoute: typeof DocsFeesRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/architecture': {
+      id: '/docs/architecture'
+      path: '/architecture'
+      fullPath: '/docs/architecture'
+      preLoaderRoute: typeof DocsArchitectureRouteImport
+      parentRoute: typeof DocsRoute
+    }
   }
 }
+
+interface DocsRouteChildren {
+  DocsArchitectureRoute: typeof DocsArchitectureRoute
+  DocsFeesRoute: typeof DocsFeesRoute
+  DocsHowItWorksRoute: typeof DocsHowItWorksRoute
+  DocsRoadmapRoute: typeof DocsRoadmapRoute
+  DocsTrustRoute: typeof DocsTrustRoute
+  DocsIndexRoute: typeof DocsIndexRoute
+}
+
+const DocsRouteChildren: DocsRouteChildren = {
+  DocsArchitectureRoute: DocsArchitectureRoute,
+  DocsFeesRoute: DocsFeesRoute,
+  DocsHowItWorksRoute: DocsHowItWorksRoute,
+  DocsRoadmapRoute: DocsRoadmapRoute,
+  DocsTrustRoute: DocsTrustRoute,
+  DocsIndexRoute: DocsIndexRoute,
+}
+
+const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   DeployRoute: DeployRoute,
+  DocsRoute: DocsRouteWithChildren,
   StrategistRoute: StrategistRoute,
   VaultsIdRoute: VaultsIdRoute,
   VaultsIndexRoute: VaultsIndexRoute,

@@ -10,6 +10,7 @@ const links = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/strategist", label: "Strategist" },
   { to: "/deploy", label: "Deploy" },
+  { to: "/docs", label: "Docs" },
 ];
 
 export function Navbar() {
@@ -40,7 +41,6 @@ export function Navbar() {
               </Link>
             );
           })}
-          <a href="#" className="rounded-md px-3 py-1.5 text-sm text-eclipse-muted hover:text-eclipse-text">Docs</a>
         </nav>
 
         <div className="flex items-center gap-2">
