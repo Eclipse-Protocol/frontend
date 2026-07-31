@@ -79,4 +79,16 @@ export const ERC20_ABI = [
     stateMutability: "view",
     type: "function",
   },
+  // MockERC20 only — unrestricted, test-only mint used by the dev "Get test tokens" action.
+  // Not part of the real ERC-20 standard; calling this against a non-mock asset will revert.
+  {
+    inputs: [
+      { internalType: "address", name: "to", type: "address" },
+      { internalType: "uint256", name: "amount", type: "uint256" },
+    ],
+    name: "mint",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
 ] as const;

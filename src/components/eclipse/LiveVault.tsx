@@ -232,6 +232,7 @@ export function LiveDepositPanel() {
   const [tab, setTab] = useState<Tab>("Deposit");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [mintBusy, setMintBusy] = useState(false);
   const { writeContractAsync } = useWriteContract();
 
   const v = useAlphaVaultCore();
@@ -334,6 +335,31 @@ export function LiveDepositPanel() {
     }
   }
 
+  async function getTestTokens() {
+    if (!v.assetToken || !address || v.assetDecimals.data === undefined) return;
+    try {
+      setMintBusy(true);
+      const mintAmount = parseUnits("1000", v.assetDecimals.data);
+      const hash = await writeContractAsync({
+        ...v.assetToken,
+        functionName: "mint",
+        args: [address, mintAmount],
+      });
+      await waitForTransactionReceipt(wagmiConfig, { hash });
+      await walletAssetBalance.refetch();
+      toast.success("Test tokens minted", {
+        description: `1000 ${v.assetSymbol.data ?? "tokens"} sent to your wallet`,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error("Mint failed", { description: message.slice(0, 200) });
+    } finally {
+      setMintBusy(false);
+    }
+  }
+
+  const isPaused = v.paused.data === true;
+
   return (
     <div className="glass-card sticky top-24 p-5">
       <div className="mb-4 inline-flex w-full rounded-lg border border-eclipse-border bg-eclipse-surface p-1">
@@ -350,6 +376,16 @@ export function LiveDepositPanel() {
           </button>
         ))}
       </div>
+
+      {isPaused && (
+        <div className="mb-4 rounded-lg border border-eclipse-danger/40 bg-eclipse-danger/10 p-3 text-xs text-eclipse-text">
+          <div className="font-medium text-eclipse-danger">Vault paused</div>
+          <p className="mt-1 text-eclipse-muted">
+            AlphaVault's circuit breaker is currently tripped (<code className="text-eclipse-purple">paused()</code> returns true).
+            Deposits and redemptions are disabled on-chain until the strategist resets it.
+          </p>
+        </div>
+      )}
 
       {!isConnected ? (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -389,11 +425,21 @@ export function LiveDepositPanel() {
 
           <button
             onClick={submit}
-            disabled={!!busy || !amount}
+            disabled={!!busy || !amount || isPaused}
             className="mt-4 w-full rounded-lg bg-eclipse-purple py-2.5 text-sm font-medium text-white transition-colors hover:bg-eclipse-purple-bright glow-purple disabled:opacity-60"
           >
             {busy ?? `${tab} ${tab === "Deposit" ? v.assetSymbol.data ?? "" : "shares"}`}
           </button>
+
+          {import.meta.env.DEV && tab === "Deposit" && (
+            <button
+              onClick={getTestTokens}
+              disabled={mintBusy || v.assetDecimals.data === undefined}
+              className="mt-2 w-full rounded-lg border border-dashed border-eclipse-border py-2 text-xs text-eclipse-muted transition-colors hover:border-eclipse-purple/60 hover:text-eclipse-text disabled:opacity-60"
+            >
+              {mintBusy ? "Minting…" : `Dev: Get 1000 test ${v.assetSymbol.data ?? "tokens"}`}
+            </button>
+          )}
         </>
       )}
 
