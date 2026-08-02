@@ -11,13 +11,25 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { CodeTree, DocsHeader, DocsTable, FlowChain, PrevNext, Section, SubHeading } from "@/components/eclipse/DocsUI";
+import {
+  CodeTree,
+  DocsHeader,
+  DocsTable,
+  FlowChain,
+  PrevNext,
+  Section,
+  SubHeading,
+} from "@/components/eclipse/DocsUI";
 
 export const Route = createFileRoute("/docs/architecture")({
   head: () => ({
     meta: [
       { title: "Architecture — Eclipse Protocol Docs" },
-      { name: "description", content: "System overview, smart contracts, project layout, and tech stack behind Eclipse Protocol." },
+      {
+        name: "description",
+        content:
+          "System overview, smart contracts, project layout, and tech stack behind Eclipse Protocol.",
+      },
     ],
   }),
   component: Architecture,
@@ -34,9 +46,9 @@ function Architecture() {
 
       <Section eyebrow="System Overview" title="How the pieces connect">
         <p>
-          The strategist's code deploys once into the enclave and never leaves it. From there, market data
-          flows in, a signed instruction flows out, and Flare contracts do the rest — execution, ledger,
-          fees — before results surface on the investor dashboard.
+          The strategist's code deploys once into the enclave and never leaves it. From there,
+          market data flows in, a signed instruction flows out, and Flare contracts do the rest —
+          execution, ledger, fees — before results surface on the investor dashboard.
         </p>
         <FlowChain
           nodes={[
@@ -50,11 +62,26 @@ function Architecture() {
         <DocsTable
           head={["Component", "Role"]}
           rows={[
-            ["Flare FTSO", "Live price feeds the enclave reads for strategy decisions and the vault reads for NAV valuation"],
-            ["Flare Data Connector (FDC)", "Brings the enclave's hardware attestation on-chain via consensus-verified Merkle proofs"],
-            ["EnclaveRegistry.sol", "The on-chain root of trust — maps attested enclave public keys to strategies"],
-            ["AlphaVault.sol", "ERC-4626 vault: deposits, withdrawals, signature-gated trade execution, fee harvest"],
-            ["PerformanceLedger.sol", "Append-only, hash-chained record of every epoch's NAV commitment"],
+            [
+              "Flare FTSO",
+              "Live price feeds the enclave reads for strategy decisions and the vault reads for NAV valuation",
+            ],
+            [
+              "Flare Data Connector (FDC)",
+              "Brings the enclave's hardware attestation on-chain via consensus-verified Merkle proofs",
+            ],
+            [
+              "EnclaveRegistry.sol",
+              "The on-chain root of trust — maps attested enclave public keys to strategies",
+            ],
+            [
+              "AlphaVault.sol",
+              "ERC-4626 vault: deposits, withdrawals, signature-gated trade execution, fee harvest",
+            ],
+            [
+              "PerformanceLedger.sol",
+              "Append-only, hash-chained record of every epoch's NAV commitment",
+            ],
             ["Flare DEX Router", "Executes the swap once a signed instruction clears risk checks"],
           ]}
         />
@@ -62,8 +89,8 @@ function Architecture() {
 
       <Section eyebrow="Contracts" title="Smart contract architecture">
         <p>
-          Built with Foundry on <strong className="text-eclipse-text">OpenZeppelin</strong> primitives wherever
-          possible, deployed to Coston2 (Flare testnet) ahead of mainnet.
+          Built with Foundry on <strong className="text-eclipse-text">OpenZeppelin</strong>{" "}
+          primitives wherever possible, deployed to Coston2 (Flare testnet) ahead of mainnet.
         </p>
 
         <SubHeading>Core contracts</SubHeading>
@@ -93,19 +120,43 @@ function Architecture() {
         <DocsTable
           head={["File", "Purpose"]}
           rows={[
-            ["FeeMath.sol", "Pure, stateless price-per-share / high-water-mark comparison and 3-7 fee-split math — independently unit-testable, no per-address storage."],
-            ["IAlphaVault.sol / IEnclaveRegistry.sol", "Stable ABIs for the frontend, relayer, and any integrating protocol."],
-            ["IDexRouter.sol", "Thin interface over the Flare DEX router (Uniswap-V2-style swapExactTokensForTokens shape)."],
-            ["IFtsoV2.sol", "Interface over Flare's FTSOv2 price feeds, used for NAV valuation in a common unit."],
-            ["IFdcVerification.sol", "Interface over Flare's Data Connector verification contracts, used for the one-time enclave attestation check."],
+            [
+              "FeeMath.sol",
+              "Pure, stateless price-per-share / high-water-mark comparison and 3-7 fee-split math — independently unit-testable, no per-address storage.",
+            ],
+            [
+              "IAlphaVault.sol / IEnclaveRegistry.sol",
+              "Stable ABIs for the frontend, relayer, and any integrating protocol.",
+            ],
+            [
+              "IDexRouter.sol",
+              "Thin interface over the Flare DEX router (Uniswap-V2-style swapExactTokensForTokens shape).",
+            ],
+            [
+              "IFtsoV2.sol",
+              "Interface over Flare's FTSOv2 price feeds, used for NAV valuation in a common unit.",
+            ],
+            [
+              "IFdcVerification.sol",
+              "Interface over Flare's Data Connector verification contracts, used for the one-time enclave attestation check.",
+            ],
           ]}
         />
 
         <SubHeading>External libraries</SubHeading>
         <ul className="list-disc space-y-1.5 pl-5 marker:text-eclipse-purple">
-          <li><strong className="text-eclipse-text">OpenZeppelin Contracts</strong> — ERC4626, ERC20, AccessControl/Ownable2Step, ReentrancyGuard, Pausable, ECDSA, EIP712, SafeERC20</li>
-          <li><strong className="text-eclipse-text">Flare periphery contracts</strong> — official interfaces/libraries for FTSOv2 and FDC integration</li>
-          <li><strong className="text-eclipse-text">forge-std</strong> — Foundry's standard testing library</li>
+          <li>
+            <strong className="text-eclipse-text">OpenZeppelin Contracts</strong> — ERC4626, ERC20,
+            AccessControl/Ownable2Step, ReentrancyGuard, Pausable, ECDSA, EIP712, SafeERC20
+          </li>
+          <li>
+            <strong className="text-eclipse-text">Flare periphery contracts</strong> — official
+            interfaces/libraries for FTSOv2 and FDC integration
+          </li>
+          <li>
+            <strong className="text-eclipse-text">forge-std</strong> — Foundry's standard testing
+            library
+          </li>
         </ul>
       </Section>
 
@@ -133,10 +184,16 @@ function Architecture() {
         <DocsTable
           head={["Layer", "Technology"]}
           rows={[
-            ["Confidential compute", "Google Cloud Confidential Space (AMD SEV-SNP / Intel TDX), RA-TLS attestation pattern"],
+            [
+              "Confidential compute",
+              "Google Cloud Confidential Space (AMD SEV-SNP / Intel TDX), RA-TLS attestation pattern — architected target; current MVP attestation claim is a documented mock, see Trust & Security",
+            ],
             ["Enclave runtime", "Node.js / TypeScript strategy runner, containerized (Docker)"],
             ["Smart contracts", "Solidity, Foundry, OpenZeppelin"],
-            ["Oracle / attestation bridging", "Flare Data Connector (FDC) JsonApi attestation, Flare FTSOv2 price feeds"],
+            [
+              "Oracle / attestation bridging",
+              "Flare Data Connector (FDC) JsonApi attestation, Flare FTSOv2 price feeds",
+            ],
             ["Execution venue", "Flare-native DEX router (e.g. SparkDEX)"],
             ["Relayer", "Node.js / TypeScript, ethers.js / viem"],
             ["Frontend", "React, TanStack Start/Router, TypeScript, Tailwind CSS, wagmi / viem"],
@@ -144,11 +201,21 @@ function Architecture() {
           ]}
         />
         <div className="mt-4 flex flex-wrap gap-3 text-xs text-eclipse-muted">
-          <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-eclipse-purple" /> Hardware attestation</span>
-          <span className="inline-flex items-center gap-1.5"><Database className="h-3.5 w-3.5 text-eclipse-purple" /> Hash-chained ledger</span>
-          <span className="inline-flex items-center gap-1.5"><LineChart className="h-3.5 w-3.5 text-eclipse-purple" /> ERC-4626 vaults</span>
-          <span className="inline-flex items-center gap-1.5"><Repeat className="h-3.5 w-3.5 text-eclipse-purple" /> Epoch-based execution</span>
-          <span className="inline-flex items-center gap-1.5"><Github className="h-3.5 w-3.5 text-eclipse-purple" /> Open-source contracts</span>
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5 text-eclipse-purple" /> Hardware attestation
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Database className="h-3.5 w-3.5 text-eclipse-purple" /> Hash-chained ledger
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <LineChart className="h-3.5 w-3.5 text-eclipse-purple" /> ERC-4626 vaults
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Repeat className="h-3.5 w-3.5 text-eclipse-purple" /> Epoch-based execution
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Github className="h-3.5 w-3.5 text-eclipse-purple" /> Open-source contracts
+          </span>
         </div>
       </Section>
 

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DocsHeader, PrevNext, Section } from "@/components/eclipse/DocsUI";
@@ -7,7 +7,11 @@ export const Route = createFileRoute("/docs/roadmap")({
   head: () => ({
     meta: [
       { title: "Roadmap — Eclipse Protocol Docs" },
-      { name: "description", content: "From MVP build weeks to mainnet audit, a strategy marketplace, and multi-chain execution." },
+      {
+        name: "description",
+        content:
+          "From MVP build weeks to mainnet audit, a strategy marketplace, and multi-chain execution.",
+      },
     ],
   }),
   component: RoadmapPage,
@@ -53,10 +57,31 @@ const mvpWeeks = [
 ];
 
 const beyond = [
-  { when: "Post-hackathon", title: "Audit & mainnet", desc: "Security audit of vault + registry contracts, mainnet deployment." },
-  { when: "Q4 2026", title: "Strategy marketplace", desc: "Multiple concurrent strategist vaults, investor-facing strategy discovery and comparison." },
-  { when: "2027", title: "Multi-chain execution", desc: "Solana/Anchor execution vaults alongside Flare EVM vaults, leveraging native Flare Confidential Compute (PMWs) once mainnet-live to reduce reliance on Google Confidential Space." },
-  { when: "Longer term", title: "Institutional-grade rails", desc: "Compliance-gated vaults, strategist reputation scoring built on the attested track record, infrastructure licensing for the attested-compute + on-chain-verification pattern beyond trading." },
+  {
+    when: "Post-hackathon",
+    title: "Genuine Confidential Space attestation",
+    desc: "Replace the current documented-mock attestation claim with a real Google Confidential Space hardware token — a deliberate Week 1 scope cut after hitting a GCP billing wall, not yet done.",
+  },
+  {
+    when: "Post-hackathon",
+    title: "Audit & mainnet",
+    desc: "Security audit of vault + registry contracts, mainnet deployment.",
+  },
+  {
+    when: "Q4 2026",
+    title: "Strategy marketplace",
+    desc: "Multiple concurrent strategist vaults, investor-facing strategy discovery and comparison.",
+  },
+  {
+    when: "2027",
+    title: "Multi-chain execution",
+    desc: "Solana/Anchor execution vaults alongside Flare EVM vaults, leveraging native Flare Confidential Compute (PMWs) once mainnet-live as an alternative to Google Confidential Space.",
+  },
+  {
+    when: "Longer term",
+    title: "Institutional-grade rails",
+    desc: "Compliance-gated vaults, strategist reputation scoring built on the attested track record, infrastructure licensing for the attested-compute + on-chain-verification pattern beyond trading.",
+  },
 ];
 
 function RoadmapPage() {
@@ -77,7 +102,9 @@ function RoadmapPage() {
                   {i + 1}
                 </span>
                 <div>
-                  <div className="font-mono text-[10px] uppercase tracking-wider text-eclipse-gold">{w.week}</div>
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-eclipse-gold">
+                    {w.week}
+                  </div>
                   <div className="text-sm font-semibold text-eclipse-text">{w.title}</div>
                 </div>
               </div>
@@ -106,7 +133,9 @@ function RoadmapPage() {
                     : "border-eclipse-border bg-eclipse-surface",
                 )}
               />
-              <div className="font-mono text-[11px] uppercase tracking-widest text-eclipse-gold">{b.when}</div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-eclipse-gold">
+                {b.when}
+              </div>
               <div className="mt-1 text-base font-semibold text-eclipse-text">{b.title}</div>
               <p className="mt-1 text-sm text-eclipse-text/75">{b.desc}</p>
             </li>
@@ -120,17 +149,15 @@ function RoadmapPage() {
           Deploy your edge without giving it away.
         </h3>
         <p className="mx-auto mt-2 max-w-xl text-sm text-eclipse-muted">
-          Post a bond. Ship a strategy. Let the enclave prove your track record — while your alpha stays
-          yours.
+          Post a bond. Ship a strategy. Let the enclave prove your track record — while your alpha
+          stays yours.
         </p>
-        <a
-          href="https://eclipse-protocol-delta.vercel.app/deploy"
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          to="/deploy"
           className="mt-5 inline-flex items-center gap-2 rounded-lg bg-eclipse-purple px-5 py-3 text-sm font-medium text-white glow-purple hover:bg-eclipse-purple-bright"
         >
           <Rocket className="h-4 w-4" /> Deploy a Strategy
-        </a>
+        </Link>
       </div>
 
       <PrevNext prev={{ to: "/docs/fees", label: "Fee Model" }} />

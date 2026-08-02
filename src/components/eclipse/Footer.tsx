@@ -8,7 +8,7 @@ const columns = [
       { label: "Overview", to: "/docs" },
       { label: "Vaults", to: "/vaults" },
       { label: "Strategists", to: "/strategist" },
-      { label: "Ledger", to: "/docs/trust" },
+      { label: "Trust & Security", to: "/docs/trust" },
     ],
   },
   {
@@ -26,7 +26,6 @@ const columns = [
       { label: "Docs", to: "/docs" },
       { label: "GitHub", href: "https://github.com/Eclipse-Protocol" },
       { label: "X / Twitter", href: "https://x.com/Eclipse_Protocol" },
-      { label: "Launch app", href: "https://eclipse-protocol-delta.vercel.app/" },
     ],
   },
 ];
@@ -59,7 +58,12 @@ export function Footer() {
                         {link.label}
                       </Link>
                     ) : (
-                      <a href={link.href} target="_blank" rel="noreferrer" className="hover:text-eclipse-text">
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-eclipse-text"
+                      >
                         {link.label}
                       </a>
                     )}
@@ -72,8 +76,8 @@ export function Footer() {
       </div>
       <div className="border-t border-eclipse-border">
         <div className="mx-auto max-w-7xl px-6 py-5 text-center text-xs uppercase tracking-wider text-eclipse-muted">
-          © {new Date().getFullYear()} Eclipse Protocol · Attested by Google Confidential Space ·
-          Anchored on Flare
+          © {new Date().getFullYear()} Eclipse Protocol · FDC-Verified Attestation · Anchored on
+          Flare
         </div>
       </div>
     </footer>

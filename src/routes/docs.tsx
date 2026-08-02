@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 import {
   BookOpen,
   Cpu,
-  ExternalLink,
   Github,
   Layers,
   Menu,
+  Rocket,
   Route as RouteIcon,
   ShieldCheck,
   Twitter,
@@ -22,14 +22,18 @@ export const Route = createFileRoute("/docs")({
       { title: "Docs — Eclipse Protocol" },
       {
         name: "description",
-        content: "Introduction, architecture, trust model, fee mechanics, and roadmap for Eclipse Protocol.",
+        content:
+          "Introduction, architecture, trust model, fee mechanics, and roadmap for Eclipse Protocol.",
       },
     ],
   }),
   component: DocsLayout,
 });
 
-const navGroups: { title: string; items: { to: string; label: string; icon: typeof BookOpen }[] }[] = [
+const navGroups: {
+  title: string;
+  items: { to: string; label: string; icon: typeof BookOpen }[];
+}[] = [
   {
     title: "Get Started",
     items: [
@@ -52,7 +56,6 @@ const navGroups: { title: string; items: { to: string; label: string; icon: type
 ];
 
 const externalLinks = [
-  { href: "https://eclipse-protocol-delta.vercel.app/", label: "Launch App", icon: ExternalLink },
   { href: "https://github.com/Eclipse-Protocol", label: "GitHub", icon: Github },
   { href: "https://x.com/Eclipse_Protocol", label: "X / Twitter", icon: Twitter },
 ];
@@ -118,7 +121,12 @@ function DocsNav({ pathname, onNavigate }: { pathname: string; onNavigate: () =>
                         : "text-eclipse-muted hover:bg-white/[0.03] hover:text-eclipse-text",
                     )}
                   >
-                    <item.icon className={cn("h-3.5 w-3.5", active ? "text-eclipse-purple" : "text-eclipse-muted")} />
+                    <item.icon
+                      className={cn(
+                        "h-3.5 w-3.5",
+                        active ? "text-eclipse-purple" : "text-eclipse-muted",
+                      )}
+                    />
                     {item.label}
                   </Link>
                 </li>
@@ -128,8 +136,20 @@ function DocsNav({ pathname, onNavigate }: { pathname: string; onNavigate: () =>
         </div>
       ))}
       <div>
-        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-eclipse-muted">Resources</div>
+        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-eclipse-muted">
+          Resources
+        </div>
         <ul className="space-y-0.5">
+          <li>
+            <Link
+              to="/vaults"
+              onClick={onNavigate}
+              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-eclipse-muted transition-colors hover:bg-white/[0.03] hover:text-eclipse-text"
+            >
+              <Rocket className="h-3.5 w-3.5" />
+              Launch App
+            </Link>
+          </li>
           {externalLinks.map((l) => (
             <li key={l.href}>
               <a

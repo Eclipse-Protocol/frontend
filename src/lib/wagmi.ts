@@ -2,7 +2,8 @@ import { createConfig, http } from "wagmi";
 import { defineChain } from "viem";
 import { injected } from "wagmi/connectors";
 
-const rpcUrl = import.meta.env.VITE_COSTON2_RPC_URL ?? "https://coston2-api.flare.network/ext/C/rpc";
+const rpcUrl =
+  import.meta.env.VITE_COSTON2_RPC_URL ?? "https://coston2-api.flare.network/ext/C/rpc";
 
 export const coston2 = defineChain({
   id: 114,
@@ -21,7 +22,10 @@ export const wagmiConfig = createConfig({
   chains: [coston2],
   connectors: [injected()],
   transports: {
-    [coston2.id]: http(rpcUrl),
+    // Coston2 has no Multicall3 deployed at the canonical address, so contract-level multicall
+    // isn't available here — JSON-RPC request batching is the closest available equivalent for
+    // reducing round trips on pages that read many contracts at once (e.g. the vault marketplace).
+    [coston2.id]: http(rpcUrl, { batch: true }),
   },
   ssr: true,
 });

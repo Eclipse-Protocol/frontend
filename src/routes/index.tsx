@@ -4,7 +4,7 @@ import { AttestationTicker } from "@/components/eclipse/AttestationTicker";
 import { VaultCard } from "@/components/eclipse/VaultCard";
 import { EclipseMark } from "@/components/eclipse/EclipseMark";
 import { AttestationBadge } from "@/components/eclipse/AttestationBadge";
-import { mockVaults } from "@/lib/mock-data";
+import { useLiveVaults } from "@/hooks/useLiveVaults";
 import { ArrowRight, Cpu, EyeOff, FileCheck2, Lock, Rocket, ShieldCheck, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -12,7 +12,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const featured = mockVaults.slice(0, 3);
+  const { vaults } = useLiveVaults();
+  const featured = vaults.slice(0, 3);
   return (
     <AppShell>
       {/* Hero */}
@@ -67,7 +68,7 @@ function Landing() {
             {
               icon: Cpu,
               title: "Strategy deployed",
-              desc: "Strategist ships code into a Confidential Space enclave. Nobody — not even us — can read it.",
+              desc: "Strategist ships code into an isolated enclave. Nobody — not even us — can read it.",
             },
             {
               icon: ShieldCheck,
@@ -140,7 +141,7 @@ function Landing() {
         </div>
         <div className="mt-8 grid gap-5 md:grid-cols-3">
           {featured.map((v) => (
-            <VaultCard key={v.id} vault={v} />
+            <VaultCard key={v.vaultAddress} vault={v} />
           ))}
         </div>
       </section>
@@ -153,8 +154,7 @@ function Landing() {
             Verified end-to-end
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-eclipse-text/80">
-            <TrustBadge icon={Lock} label="Google Confidential Space" />
-            <TrustBadge icon={Cpu} label="AMD SEV-SNP / Intel TDX" />
+            <TrustBadge icon={Lock} label="TEE-Based Architecture" />
             <TrustBadge icon={ShieldCheck} label="Flare Data Connector" />
             <TrustBadge icon={FileCheck2} label="ERC-4626 Vaults" />
             <TrustBadge icon={EyeOff} label="Zero strategy leakage" />
