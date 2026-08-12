@@ -25,6 +25,14 @@ export function Navbar() {
           <span className="font-serif text-xl italic text-eclipse-text">Eclipse Protocol</span>
         </Link>
 
+        <span
+          title="Chain id 114 — every contract, tx, and balance on this site is Coston2 testnet, not mainnet"
+          className="hidden items-center gap-1.5 rounded-full border border-eclipse-gold/50 bg-eclipse-gold/10 px-3 py-1 text-xs font-semibold tracking-wide text-eclipse-gold sm:inline-flex"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-eclipse-gold" />
+          Coston2 Testnet
+        </span>
+
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => {
             const active = pathname === l.to || (l.to !== "/" && pathname.startsWith(l.to));
@@ -58,6 +66,10 @@ export function Navbar() {
       {open && (
         <div className="border-t border-eclipse-border bg-eclipse-surface md:hidden">
           <nav className="flex flex-col p-4">
+            <span className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border border-eclipse-gold/50 bg-eclipse-gold/10 px-3 py-1 text-xs font-semibold tracking-wide text-eclipse-gold">
+              <span className="h-1.5 w-1.5 rounded-full bg-eclipse-gold" />
+              Coston2 Testnet
+            </span>
             {links.map((l) => (
               <Link
                 key={l.to}

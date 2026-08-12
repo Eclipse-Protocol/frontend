@@ -164,15 +164,25 @@ function Dashboard() {
                   : undefined
               }
             />
-            <StatCard label="Current value" value={fmtUSD(totalValue)} />
+            <StatCard
+              label="Current value"
+              value={fmtUSD(totalValue)}
+              hint="Sum of convertToAssets(shareBalance) across your registered vault positions"
+            />
             <StatCard
               label="Total P&L"
               value={
                 pnl !== undefined ? `${pnl >= 0 ? "+" : ""}${fmtUSD(pnl)}` : "Not enough history"
               }
               delta={pnlPct}
+              hint="Current value minus net deposits from on-chain Deposit/Withdraw events"
             />
-            <StatCard label="Active positions" value={String(positions.length)} mono={false} />
+            <StatCard
+              label="Active positions"
+              value={String(positions.length)}
+              mono={false}
+              hint="Vaults (via StrategyRegistry) where this wallet holds a nonzero share balance"
+            />
           </div>
 
           <div className="mx-auto mt-6 max-w-7xl px-6">

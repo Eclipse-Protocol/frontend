@@ -12,10 +12,10 @@ export const Route = createFileRoute("/vaults/")({
       { title: "Vault Marketplace — Eclipse Protocol" },
       {
         name: "description",
-        content: "Explore TEE-verified vaults. Filter by APY, TVL, and risk tier.",
+        content: "Explore FDC-verified vaults on Coston2 testnet. Filter by TVL and performance.",
       },
       { property: "og:title", content: "Vault Marketplace — Eclipse Protocol" },
-      { property: "og:description", content: "Explore TEE-verified vaults." },
+      { property: "og:description", content: "Explore FDC-verified vaults on Coston2 testnet." },
     ],
   }),
   component: VaultsPage,
@@ -94,7 +94,7 @@ function VaultsPage() {
             options={["TVL", "Since inception", "Newest", "Highest bond"]}
           />
           <Select label="Pair" value={pair} onChange={setPair} options={pairs} />
-          <Toggle label="TEE Verified" checked={teeOnly} onChange={setTeeOnly} />
+          <Toggle label="FDC-Verified" checked={teeOnly} onChange={setTeeOnly} />
           <Toggle label="Live" checked={liveOnly} onChange={setLiveOnly} />
           <div className="ml-auto text-xs text-eclipse-muted">
             {isLoading ? "Loading…" : `${filtered.length} vault${filtered.length === 1 ? "" : "s"}`}

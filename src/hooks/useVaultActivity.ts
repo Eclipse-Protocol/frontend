@@ -21,6 +21,7 @@ export interface HarvestEvent {
   currentPPS: bigint;
   treasuryShares: bigint;
   strategistShares: bigint;
+  epochIndex?: number;
 }
 
 /** Coston2's public RPC caps eth_getLogs at 30 blocks per call, so a naive full-history scan is
@@ -61,15 +62,21 @@ export function useVaultActivity(
         const timeSpan = latestBlock.timestamp - refBlock.timestamp;
         const secondsPerBlock = blockSpan > 0n ? Number(timeSpan) / Number(blockSpan) : 2.5;
 
-        const foundTrades: TradeEvent[] = [];
-        const foundHarvests: HarvestEvent[] = [];
+        const timestamps = epochTimestamps ?? [];
 
-        for (const ts of epochTimestamps ?? []) {
+        // One epoch's search (try increasingly wide offsets around the block-time estimate,
+        // stopping at the first window that finds anything) — run per-epoch, but epochs
+        // themselves are batched and fired concurrently below instead of one full epoch at a
+        // time, since with 16+ epochs a fully sequential scan visibly stalls the UI even though
+        // each individual window read is fast.
+        async function scanEpoch(epochIndex: number) {
+          const ts = timestamps[epochIndex];
           const secondsAgo = Number(latestBlock.timestamp - ts);
           const blocksAgo = BigInt(Math.max(0, Math.round(secondsAgo / secondsPerBlock)));
           const estimate = latestBlock.number > blocksAgo ? latestBlock.number - blocksAgo : 0n;
 
-          // Try increasingly wide offsets around the estimate to tolerate block-time drift.
+          const epochTrades: TradeEvent[] = [];
+          const epochHarvests: HarvestEvent[] = [];
           const offsets = [0n, -29n, 29n, -58n, 58n, -87n, 87n];
           for (const offset of offsets) {
             const center = estimate + offset;
@@ -93,7 +100,7 @@ export function useVaultActivity(
               ]);
               if (tradeLogs.length > 0 || harvestLogs.length > 0) {
                 for (const l of tradeLogs) {
-                  foundTrades.push({
+                  epochTrades.push({
                     txHash: l.transactionHash,
                     blockNumber: l.blockNumber,
                     timestamp: ts,
@@ -105,19 +112,38 @@ export function useVaultActivity(
                   });
                 }
                 for (const l of harvestLogs) {
-                  foundHarvests.push({
+                  epochHarvests.push({
                     txHash: l.transactionHash,
                     blockNumber: l.blockNumber,
                     timestamp: ts,
                     currentPPS: l.args.currentPPS!,
                     treasuryShares: l.args.treasuryShares!,
                     strategistShares: l.args.strategistShares!,
+                    epochIndex,
                   });
                 }
                 break;
               }
             } catch {
               // 30-block cap or transient RPC hiccup on this window — try the next offset.
+            }
+          }
+          return { epochTrades, epochHarvests };
+        }
+
+        const foundTrades: TradeEvent[] = [];
+        const foundHarvests: HarvestEvent[] = [];
+        const EPOCH_BATCH = 8;
+        for (let i = 0; i < timestamps.length; i += EPOCH_BATCH) {
+          const batchIndices = Array.from(
+            { length: Math.min(EPOCH_BATCH, timestamps.length - i) },
+            (_, j) => i + j,
+          );
+          const results = await Promise.allSettled(batchIndices.map(scanEpoch));
+          for (const r of results) {
+            if (r.status === "fulfilled") {
+              foundTrades.push(...r.value.epochTrades);
+              foundHarvests.push(...r.value.epochHarvests);
             }
           }
         }

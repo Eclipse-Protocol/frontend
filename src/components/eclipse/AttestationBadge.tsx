@@ -1,7 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function AttestationBadge({ className, label = "TEE Verified" }: { className?: string; label?: string }) {
+export function AttestationBadge({ className, label = "FDC-Verified" }: { className?: string; label?: string }) {
   return (
     <span
       className={cn(

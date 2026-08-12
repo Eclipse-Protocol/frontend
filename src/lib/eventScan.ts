@@ -30,19 +30,31 @@ export async function scanRecentLogs(
     : { address: params.address, abi: params.abi, eventName: params.eventName, args: params.args };
   type GetLogsArgs = Parameters<PublicClient["getLogs"]>[0];
 
-  const chunkPromises: Promise<unknown[]>[] = [];
+  const ranges: { start: bigint; end: bigint }[] = [];
   for (let start = fromBlock; start <= latest; start += CHUNK + 1n) {
     const end = start + CHUNK > latest ? latest : start + CHUNK;
-
-    chunkPromises.push(
-      publicClient.getLogs({ ...filterArgs, fromBlock: start, toBlock: end } as GetLogsArgs),
-    );
+    ranges.push({ start, end });
   }
 
-  const settled = await Promise.allSettled(chunkPromises);
-  return settled
-    .filter((r): r is PromiseFulfilledResult<unknown[]> => r.status === "fulfilled")
-    .flatMap((r) => r.value);
+  const logs: unknown[] = [];
+  // Larger batches lean on the http transport's JSON-RPC batching (see wagmi.ts, batch: true) to
+  // coalesce many getLogs calls into fewer physical HTTP round trips — the prior value of 15 meant
+  // a 20,000-block scan (~690 chunks) took ~46 sequential round trips; this cuts it to ~12.
+  const batchSize = 60;
+  for (let i = 0; i < ranges.length; i += batchSize) {
+    const batchRanges = ranges.slice(i, i + batchSize);
+    const batchPromises = batchRanges.map((r) =>
+      publicClient.getLogs({ ...filterArgs, fromBlock: r.start, toBlock: r.end } as GetLogsArgs)
+    );
+    const batchResults = await Promise.allSettled(batchPromises);
+    for (const r of batchResults) {
+      if (r.status === "fulfilled") {
+        logs.push(...r.value);
+      }
+    }
+  }
+
+  return logs;
 }
 
 export async function resolveBlockTimestamps(publicClient: PublicClient, blockNumbers: bigint[]) {

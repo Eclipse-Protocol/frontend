@@ -112,7 +112,10 @@ export function LiveTradeFeed({
             return (
               <tr
                 key={`${t.txHash}-${t.nonce}`}
-                className="border-t border-eclipse-border/70 hover:bg-eclipse-purple/5"
+                onClick={() => {
+                  window.open(`https://coston2-explorer.flare.network/tx/${t.txHash}`, "_blank", "noopener,noreferrer");
+                }}
+                className="border-t border-eclipse-border/70 hover:bg-eclipse-purple/5 cursor-pointer"
               >
                 <td className="px-5 py-2.5 text-eclipse-muted">
                   {t.timestamp !== undefined
@@ -201,35 +204,48 @@ export function LiveHarvestHistory({
     <table className="w-full text-left font-mono text-xs">
       <thead className="bg-eclipse-surface/60 text-[10px] uppercase tracking-wider text-eclipse-muted">
         <tr>
-          <th className="px-5 py-2 font-medium">New PPS</th>
-          <th className="px-3 py-2 font-medium text-right">Treasury shares</th>
-          <th className="px-3 py-2 font-medium text-right">Strategist shares</th>
+          <th className="px-5 py-2 font-medium">Epoch</th>
+          <th className="px-3 py-2 font-medium">New PPS</th>
+          <th className="px-3 py-2 font-medium text-right">Fee Minted</th>
           <th className="px-5 py-2 font-medium">Tx</th>
         </tr>
       </thead>
       <tbody>
-        {harvests.map((h) => (
-          <tr key={h.txHash} className="border-t border-eclipse-border/70">
-            <td className="px-5 py-2 text-eclipse-gold">{formatUnits(h.currentPPS, 18)}</td>
-            <td className="px-3 py-2 text-right text-eclipse-text">
-              {shareDecimals !== undefined ? formatUnits(h.treasuryShares, shareDecimals) : "…"}
-            </td>
-            <td className="px-3 py-2 text-right text-eclipse-text">
-              {shareDecimals !== undefined ? formatUnits(h.strategistShares, shareDecimals) : "…"}
-            </td>
-            <td className="px-5 py-2">
-              <a
-                href={`${coston2.blockExplorers.default.url}/tx/${h.txHash}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-eclipse-purple hover:underline"
-              >
-                {fmtAddr(h.txHash)}
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </td>
-          </tr>
-        ))}
+        {harvests.map((h) => {
+          const feeMinted = h.treasuryShares + h.strategistShares;
+          const epochLabel = h.epochIndex !== undefined ? `#${h.epochIndex}` : "Live";
+          return (
+            <tr
+              key={h.txHash}
+              onClick={() => {
+                window.open(`https://coston2-explorer.flare.network/tx/${h.txHash}`, "_blank", "noopener,noreferrer");
+              }}
+              className="border-t border-eclipse-border/70 hover:bg-eclipse-purple/5 cursor-pointer"
+            >
+              <td className="px-5 py-2 text-eclipse-gold">{epochLabel}</td>
+              <td className="px-3 py-2 text-eclipse-text">{formatUnits(h.currentPPS, 18)}</td>
+              <td className="px-3 py-2 text-right text-eclipse-text">
+                {shareDecimals !== undefined
+                  ? `${Number(formatUnits(feeMinted, shareDecimals)).toLocaleString(undefined, {
+                      maximumFractionDigits: 4,
+                    })} shares`
+                  : "…"}
+              </td>
+              <td className="px-5 py-2">
+                <a
+                  href={`${coston2.blockExplorers.default.url}/tx/${h.txHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-eclipse-purple hover:underline"
+                >
+                  {fmtAddr(h.txHash)}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

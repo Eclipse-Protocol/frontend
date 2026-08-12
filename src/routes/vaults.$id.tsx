@@ -33,7 +33,8 @@ export const Route = createFileRoute("/vaults/$id")({
       { title: "Eclipse Alpha Vault — Eclipse Protocol" },
       {
         name: "description",
-        content: "TEE-attested, FDC-verified autonomous trading vault on Coston2.",
+        content:
+          "FDC-verified autonomous trading vault on Coston2 testnet — real on-chain enclave registration, documented-mock TEE claim.",
       },
     ],
   }),

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { formatUnits, parseUnits } from "viem";
@@ -293,7 +294,13 @@ export function LiveDepositPanel() {
   const { address, isConnected } = useAccount();
   const [tab, setTab] = useState<Tab>("Deposit");
   const [amount, setAmount] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
+  const [txState, setTxState] = useState<{
+    step: "idle" | "signing" | "confirming" | "success" | "reverted";
+    txHash?: `0x${string}`;
+    error?: string;
+    action?: string;
+  }>({ step: "idle" });
+  const isBusy = txState.step === "signing" || txState.step === "confirming";
   const [mintBusy, setMintBusy] = useState(false);
   const { writeContractAsync } = useWriteContract();
 
@@ -335,6 +342,18 @@ export function LiveDepositPanel() {
     setAmount(formatUnits(maxRaw, decimals));
   }
 
+  // Catch a guaranteed-to-revert deposit/redeem client-side (insufficient balance) instead of
+  // sending a doomed transaction and showing the generic "execution reverted for an unknown
+  // reason" message — that message is technically accurate but unhelpful for diagnosing why.
+  let exceedsBalance = false;
+  if (amount && decimals !== undefined && maxRaw !== undefined) {
+    try {
+      exceedsBalance = parseUnits(amount, decimals) > maxRaw;
+    } catch {
+      exceedsBalance = false;
+    }
+  }
+
   async function submit() {
     if (!isConnected || !address) return;
     if (!amount || decimals === undefined) return;
@@ -351,30 +370,65 @@ export function LiveDepositPanel() {
       if (tab === "Deposit") {
         if (!v.assetToken) throw new Error("Underlying asset address not loaded yet");
         if ((allowance.data ?? 0n) < amountBn) {
-          setBusy("Requesting approval…");
-          const approveHash = await writeContractAsync({
-            ...v.assetToken,
-            functionName: "approve",
-            args: [ALPHA_VAULT.address, amountBn],
-          });
+          setTxState({ step: "signing", action: "Approve" });
+          let approveHash: `0x${string}`;
+          try {
+            approveHash = await writeContractAsync({
+              ...v.assetToken,
+              functionName: "approve",
+              args: [ALPHA_VAULT.address, amountBn],
+            });
+          } catch (err: any) {
+            setTxState({
+              step: "reverted",
+              action: "Approve",
+              error: err.shortMessage || err.message || String(err),
+            });
+            throw err;
+          }
+          setTxState({ step: "confirming", action: "Approve", txHash: approveHash });
           await waitForTransactionReceipt(wagmiConfig, { hash: approveHash });
           await allowance.refetch();
         }
-        setBusy("Confirming deposit…");
-        const depositHash = await writeContractAsync({
-          ...ALPHA_VAULT,
-          functionName: "deposit",
-          args: [amountBn, address],
-        });
+        setTxState({ step: "signing", action: "Deposit" });
+        let depositHash: `0x${string}`;
+        try {
+          depositHash = await writeContractAsync({
+            ...ALPHA_VAULT,
+            functionName: "deposit",
+            args: [amountBn, address],
+          });
+        } catch (err: any) {
+          setTxState({
+            step: "reverted",
+            action: "Deposit",
+            error: err.shortMessage || err.message || String(err),
+          });
+          throw err;
+        }
+        setTxState({ step: "confirming", action: "Deposit", txHash: depositHash });
         await waitForTransactionReceipt(wagmiConfig, { hash: depositHash });
+        setTxState({ step: "success", action: "Deposit", txHash: depositHash });
       } else {
-        setBusy("Confirming redeem…");
-        const redeemHash = await writeContractAsync({
-          ...ALPHA_VAULT,
-          functionName: "redeem",
-          args: [amountBn, address, address],
-        });
+        setTxState({ step: "signing", action: "Redeem" });
+        let redeemHash: `0x${string}`;
+        try {
+          redeemHash = await writeContractAsync({
+            ...ALPHA_VAULT,
+            functionName: "redeem",
+            args: [amountBn, address, address],
+          });
+        } catch (err: any) {
+          setTxState({
+            step: "reverted",
+            action: "Redeem",
+            error: err.shortMessage || err.message || String(err),
+          });
+          throw err;
+        }
+        setTxState({ step: "confirming", action: "Redeem", txHash: redeemHash });
         await waitForTransactionReceipt(wagmiConfig, { hash: redeemHash });
+        setTxState({ step: "success", action: "Redeem", txHash: redeemHash });
       }
 
       const [{ data: newShares }] = await Promise.all([
@@ -388,12 +442,19 @@ export function LiveDepositPanel() {
         description: `Share balance now ${fmtToken(newShares, v.shareDecimals.data)}`,
       });
       setAmount("");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+    } catch (err: any) {
       console.error(`${tab} failed`, { amount, amountBn: amountBn?.toString(), address, err });
-      toast.error(`${tab} failed`, { description: message.slice(0, 200) });
-    } finally {
-      setBusy(null);
+      setTxState((prev) => {
+        if (prev.step === "reverted") return prev;
+        return {
+          step: "reverted",
+          action: tab,
+          error: err.shortMessage || err.message || String(err),
+        };
+      });
+      toast.error(`${tab} failed`, {
+        description: (err.shortMessage || err.message || String(err)).slice(0, 200),
+      });
     }
   }
 
@@ -491,21 +552,139 @@ export function LiveDepositPanel() {
             </div>
           </div>
 
+          {exceedsBalance && (
+            <div className="mt-3 rounded-lg border border-eclipse-gold/40 bg-eclipse-gold/10 p-3 text-xs text-eclipse-gold">
+              {tab === "Deposit"
+                ? `Amount exceeds your wallet balance (${fmtToken(maxRaw, decimals)} ${v.assetSymbol.data ?? ""}). Mint test tokens below first — this would otherwise revert on-chain.`
+                : `Amount exceeds your share balance (${fmtToken(maxRaw, decimals)} shares).`}
+            </div>
+          )}
+
           <button
             onClick={submit}
-            disabled={!!busy || !amount || isPaused}
-            className="mt-4 w-full rounded-lg bg-eclipse-purple py-2.5 text-sm font-medium text-white transition-colors hover:bg-eclipse-purple-bright glow-purple disabled:opacity-60"
+            disabled={isBusy || !amount || isPaused || exceedsBalance}
+            className="mt-4 w-full rounded-lg bg-eclipse-purple py-2.5 text-sm font-medium text-white transition-colors hover:bg-eclipse-purple-bright glow-purple disabled:opacity-60 cursor-pointer"
           >
-            {busy ?? `${tab} ${tab === "Deposit" ? (v.assetSymbol.data ?? "") : "shares"}`}
+            {isBusy ? "Processing on-chain…" : `${tab} ${tab === "Deposit" ? (v.assetSymbol.data ?? "") : "shares"}`}
           </button>
 
-          {import.meta.env.DEV && tab === "Deposit" && (
+          {txState.step !== "idle" && (
+            <div
+              className={cn(
+                "mt-4 rounded-lg border p-4 text-xs font-mono animate-in fade-in duration-200",
+                txState.step === "signing" &&
+                  "border-eclipse-purple/40 bg-eclipse-purple/5 text-eclipse-text",
+                txState.step === "confirming" &&
+                  "border-eclipse-gold/40 bg-eclipse-gold/5 text-eclipse-text",
+                txState.step === "success" &&
+                  "border-eclipse-teal/40 bg-eclipse-teal/5 text-eclipse-text",
+                txState.step === "reverted" &&
+                  "border-eclipse-danger/40 bg-eclipse-danger/5 text-eclipse-text",
+              )}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-sans font-semibold uppercase tracking-wider text-[10px] text-eclipse-muted">
+                  Transaction status ({txState.action})
+                </span>
+                {txState.step === "success" || txState.step === "reverted" ? (
+                  <button
+                    onClick={() => setTxState({ step: "idle" })}
+                    className="text-eclipse-muted hover:text-eclipse-text text-[10px] cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                ) : null}
+              </div>
+
+              {txState.step === "signing" && (
+                <div className="flex items-center gap-2">
+                  <span className="animate-spin h-3.5 w-3.5 border-2 border-eclipse-purple border-t-transparent rounded-full" />
+                  <span className="font-sans text-eclipse-muted">
+                    Please confirm the <strong>{txState.action}</strong> transaction in your
+                    wallet...
+                  </span>
+                </div>
+              )}
+
+              {txState.step === "confirming" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="animate-spin h-3.5 w-3.5 border-2 border-eclipse-gold border-t-transparent rounded-full" />
+                    <span className="font-sans text-eclipse-muted">
+                      Waiting for block confirmation...
+                    </span>
+                  </div>
+                  {txState.txHash && (
+                    <div className="mt-1 bg-eclipse-bg/50 px-2.5 py-1.5 rounded border border-eclipse-border flex items-center justify-between">
+                      <span className="text-[10px] text-eclipse-muted truncate mr-2">
+                        {txState.txHash}
+                      </span>
+                      <a
+                        href={`https://coston2-explorer.flare.network/tx/${txState.txHash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-eclipse-purple hover:underline hover:text-eclipse-purple-bright inline-flex items-center gap-1 text-[10px] shrink-0"
+                      >
+                        Explorer <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {txState.step === "success" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-eclipse-teal font-semibold font-sans">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-eclipse-teal/20 text-eclipse-teal text-[10px] font-bold">
+                      ✓
+                    </span>
+                    {txState.action} CONFIRMED ON-CHAIN
+                  </div>
+                  {txState.txHash && (
+                    <div className="bg-eclipse-bg/50 px-2.5 py-1.5 rounded border border-eclipse-border flex items-center justify-between">
+                      <span className="text-[10px] text-eclipse-muted truncate mr-2">
+                        {txState.txHash}
+                      </span>
+                      <a
+                        href={`https://coston2-explorer.flare.network/tx/${txState.txHash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-eclipse-purple hover:underline hover:text-eclipse-purple-bright inline-flex items-center gap-1 text-[10px] shrink-0"
+                      >
+                        Explorer <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {txState.step === "reverted" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-eclipse-danger font-semibold font-sans">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-eclipse-danger/20 text-eclipse-danger text-[10px] font-bold">
+                      ✗
+                    </span>
+                    {txState.action} FAILED / REVERTED
+                  </div>
+                  {txState.error && (
+                    <p className="text-[10px] text-eclipse-danger/90 leading-relaxed bg-eclipse-danger/5 p-2 rounded border border-eclipse-danger/20 break-words">
+                      {txState.error}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === "Deposit" && (
             <button
               onClick={getTestTokens}
               disabled={mintBusy || v.assetDecimals.data === undefined}
               className="mt-2 w-full rounded-lg border border-dashed border-eclipse-border py-2 text-xs text-eclipse-muted transition-colors hover:border-eclipse-purple/60 hover:text-eclipse-text disabled:opacity-60"
             >
-              {mintBusy ? "Minting…" : `Dev: Get 1000 test ${v.assetSymbol.data ?? "tokens"}`}
+              {mintBusy
+                ? "Minting…"
+                : `Get 1000 test ${v.assetSymbol.data ?? "tokens"} (Coston2 faucet mint — MockERC20.mint(), testnet only)`}
             </button>
           )}
         </>

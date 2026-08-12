@@ -64,7 +64,9 @@ function Strategist() {
     trades,
     harvests,
     isLoading: activityLoading,
+    error: activityError,
   } = useVaultActivity(ALPHA_VAULT.address, vault?.epochTimestamps);
+
   const {
     registeredSince,
     enclaveVerifiedAt,
@@ -76,6 +78,17 @@ function Strategist() {
     scanWindowBlocks,
   } = useStrategistActivity(ALPHA_VAULT.address);
   const backend = useBackendStatus();
+
+  const vaultMismatch =
+    !!backend.reachable &&
+    !!backend.status?.vault &&
+    backend.status.vault.toLowerCase() !== ALPHA_VAULT.address.toLowerCase();
+
+  const signerMismatch =
+    !!backend.reachable &&
+    !!backend.status?.enclaveSigner &&
+    !!vault?.enclaveSigner &&
+    backend.status.enclaveSigner.toLowerCase() !== vault.enclaveSigner.toLowerCase();
 
   const { writeContractAsync } = useWriteContract();
   const [resuming, setResuming] = useState(false);
@@ -151,6 +164,28 @@ function Strategist() {
           </div>
         </div>
       </div>
+
+      {vaultMismatch && (
+        <div className="mx-auto mt-6 max-w-7xl px-6">
+          <div className="rounded-lg border border-eclipse-danger/40 bg-eclipse-danger/5 p-4 text-sm text-eclipse-danger font-sans">
+            <h4 className="font-semibold uppercase tracking-wider text-[10px] text-eclipse-danger">⚠️ Vault Configuration Mismatch</h4>
+            <p className="mt-1 text-xs text-eclipse-danger/90 leading-relaxed">
+              The running relayer backend is operating on vault address <code className="font-mono bg-eclipse-danger/10 px-1.5 py-0.5 rounded border border-eclipse-danger/20">{backend.status?.vault}</code>, which does NOT match the expected live vault address configured on the frontend (<code className="font-mono bg-eclipse-danger/10 px-1.5 py-0.5 rounded border border-eclipse-danger/20">{ALPHA_VAULT.address}</code>). Please check your relayer's config file.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {signerMismatch && (
+        <div className="mx-auto mt-6 max-w-7xl px-6">
+          <div className="rounded-lg border border-eclipse-danger/40 bg-eclipse-danger/5 p-4 text-sm text-eclipse-danger font-sans">
+            <h4 className="font-semibold uppercase tracking-wider text-[10px] text-eclipse-danger">⚠️ Enclave Signer Address Mismatch</h4>
+            <p className="mt-1 text-xs text-eclipse-danger/90 leading-relaxed">
+              The running relayer backend is using enclave signer <code className="font-mono bg-eclipse-danger/10 px-1.5 py-0.5 rounded border border-eclipse-danger/20">{backend.status?.enclaveSigner}</code>, which does NOT match the signer address registered on-chain for this vault (<code className="font-mono bg-eclipse-danger/10 px-1.5 py-0.5 rounded border border-eclipse-danger/20">{vault?.enclaveSigner}</code>). SubmitInstruction calls will revert with unauthorized signer errors.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Section 1: Strategy Identity */}
       <div className="mx-auto mt-6 max-w-7xl px-6">
@@ -288,6 +323,7 @@ function Strategist() {
                 ? fmtUSD(Number(formatUnits(vault.totalAssets, vault.underlyingDecimals)))
                 : "…"
             }
+            hint="AlphaVault.totalAssets()"
           />
           <StatCard
             label="Price per share"
@@ -303,23 +339,27 @@ function Strategist() {
                   ).toFixed(6)
                 : "…"
             }
+            hint="totalAssets() / totalSupply()"
           />
           <StatCard
             label="High-water mark"
             value={vault?.highWaterMark !== undefined ? formatUnits(vault.highWaterMark, 18) : "…"}
-            hint="scaled 1e18"
+            hint="AlphaVault.highWaterMark(), scaled 1e18"
           />
           <StatCard
             label="Current position"
             value={vault?.positionSymbol ?? "None (fully in underlying)"}
+            hint="AlphaVault.currentPosition()"
           />
           <StatCard
             label="Vault paused"
             value={vault?.paused === undefined ? "…" : vault.paused ? "Yes" : "No"}
+            hint="AlphaVault.paused() — circuit-breaker state"
           />
           <StatCard
             label="Epoch count"
             value={vault?.epochCount !== undefined ? String(vault.epochCount) : "…"}
+            hint="PerformanceLedger.epochCount()"
           />
           <StatCard
             label="Last harvest"
@@ -328,6 +368,7 @@ function Strategist() {
                 ? new Date(Number(lastHarvest.timestamp) * 1000).toLocaleString()
                 : "No harvest yet"
             }
+            hint="Timestamp of the most recent Harvest event on-chain"
           />
           <StatCard
             label="Investors (recent depositors)"
@@ -347,6 +388,7 @@ function Strategist() {
                 ? Number(formatUnits(vault.totalSupply, vault.shareDecimals)).toLocaleString()
                 : "…"
             }
+            hint="AlphaVault.totalSupply()"
           />
         </div>
       </div>
@@ -380,7 +422,15 @@ function Strategist() {
             />
             <StatusRow
               k="Trading loop running"
-              v={backend.reachable ? "Yes (heartbeat received)" : "Unknown — backend unreachable"}
+              v={
+                backend.reachable === undefined ? (
+                  "Checking…"
+                ) : backend.reachable && backend.status?.isRunning ? (
+                  <span className="text-eclipse-teal font-semibold">Yes (Loop Running)</span>
+                ) : (
+                  <span className="text-eclipse-danger">Unknown — backend unreachable</span>
+                )
+              }
             />
             <StatusRow
               k="Last execution"
@@ -402,11 +452,27 @@ function Strategist() {
             />
             <StatusRow
               k="Trades executed"
-              v={trades.length > 0 || !activityLoading ? String(trades.length) : "Scanning…"}
+              v={
+                activityError ? (
+                  <span className="text-eclipse-danger text-xs">{activityError}</span>
+                ) : trades.length > 0 || !activityLoading ? (
+                  String(trades.length)
+                ) : (
+                  "Scanning…"
+                )
+              }
             />
             <StatusRow
               k="Harvests"
-              v={harvests.length > 0 || !activityLoading ? String(harvests.length) : "Scanning…"}
+              v={
+                activityError ? (
+                  <span className="text-eclipse-danger text-xs">{activityError}</span>
+                ) : harvests.length > 0 || !activityLoading ? (
+                  String(harvests.length)
+                ) : (
+                  "Scanning…"
+                )
+              }
             />
             <StatusRow k="Current position" v={vault?.positionSymbol ?? "None"} />
           </ul>
@@ -423,6 +489,78 @@ function Strategist() {
                 Backend unreachable — no live decision log available
               </div>
             )}
+          </div>
+
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-xs font-medium text-eclipse-text uppercase tracking-wider">
+                Live Relayer Logs Stream
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px]">
+                <span
+                  className={cn(
+                    "h-2 w-2 rounded-full",
+                    backend.isSSEConnected ? "bg-eclipse-teal animate-pulse" : "bg-eclipse-danger",
+                  )}
+                />
+                <span className="text-eclipse-muted">
+                  {backend.isSSEConnected
+                    ? "SSE Active"
+                    : backend.reachable
+                      ? "REST Polling"
+                      : "Disconnected (Reconnecting...)"}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-eclipse-border bg-black/80 p-4 font-mono text-[11px] leading-relaxed shadow-inner">
+              <div
+                className="h-[180px] overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-eclipse-border"
+                ref={(el) => {
+                  if (el) el.scrollTop = el.scrollHeight;
+                }}
+              >
+                {!backend.reachable ? (
+                  <div className="text-eclipse-danger flex h-full items-center justify-center font-sans text-xs">
+                    Backend unreachable — waiting for relayer connection...
+                  </div>
+                ) : backend.logs.length === 0 ? (
+                  <div className="text-eclipse-muted flex h-full items-center justify-center font-sans text-xs">
+                    No recent activity logs available.
+                  </div>
+                ) : (
+                  backend.logs.map((log, idx) => (
+                    <div
+                      key={idx}
+                      className="flex gap-2 items-start hover:bg-white/5 px-1 py-0.5 rounded"
+                    >
+                      <span className="text-eclipse-muted shrink-0">
+                        [{new Date(log.timestamp).toLocaleTimeString()}]
+                      </span>
+                      <span
+                        className={cn(
+                          "font-semibold uppercase tracking-wider text-[9px] px-1 rounded shrink-0",
+                          log.level === "ERROR" && "bg-eclipse-danger/25 text-eclipse-danger",
+                          log.level === "WARN" && "bg-eclipse-gold/25 text-eclipse-gold",
+                          log.level === "INFO" && "bg-eclipse-purple/20 text-eclipse-purple",
+                        )}
+                      >
+                        {log.level}
+                      </span>
+                      <span
+                        className={cn(
+                          "break-words font-medium",
+                          log.level === "ERROR" && "text-eclipse-danger",
+                          log.level === "WARN" && "text-eclipse-gold",
+                          log.level === "INFO" && "text-white",
+                        )}
+                      >
+                        {log.message}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

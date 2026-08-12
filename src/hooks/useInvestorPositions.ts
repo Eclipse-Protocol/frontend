@@ -132,64 +132,79 @@ export function useInvestorPositions(owner: Address | undefined) {
         const result = new Map<Address, { deposits: InvestorTx[]; withdraws: InvestorTx[] }>();
 
         for (const v of activeVaults) {
-          const chunkPromises: Promise<{ deposits: unknown[]; withdraws: unknown[] }>[] = [];
+          const ranges: { start: bigint; end: bigint }[] = [];
           for (let start = fromBlock; start <= latest; start += CHUNK + 1n) {
             const end = start + CHUNK > latest ? latest : start + CHUNK;
-            chunkPromises.push(
+            ranges.push({ start, end });
+          }
+
+          const deposits: InvestorTx[] = [];
+          const withdraws: InvestorTx[] = [];
+
+          // Larger batches lean on the http transport's JSON-RPC batching (wagmi.ts, batch: true)
+          // to coalesce many getLogs calls into fewer physical round trips — 15 meant a 20,000-block
+          // scan (~690 chunks) took ~46 sequential rounds per vault.
+          const batchSize = 60;
+          for (let i = 0; i < ranges.length; i += batchSize) {
+            if (cancelled) break;
+            const batchRanges = ranges.slice(i, i + batchSize);
+            const batchPromises = batchRanges.map((r) =>
               Promise.all([
                 publicClient!.getLogs({
                   address: v.vaultAddress,
                   event: depositEvent,
                   args: { owner },
-                  fromBlock: start,
-                  toBlock: end,
+                  fromBlock: r.start,
+                  toBlock: r.end,
                 }),
                 publicClient!.getLogs({
                   address: v.vaultAddress,
                   event: withdrawEvent,
                   args: { owner },
-                  fromBlock: start,
-                  toBlock: end,
+                  fromBlock: r.start,
+                  toBlock: r.end,
                 }),
-              ]).then(([deposits, withdraws]) => ({ deposits, withdraws })),
+              ]).then(([deposits, withdraws]) => ({ deposits, withdraws }))
             );
-          }
-          const chunkResults = await Promise.allSettled(chunkPromises);
-          const deposits: InvestorTx[] = [];
-          const withdraws: InvestorTx[] = [];
-          for (const r of chunkResults) {
-            if (r.status !== "fulfilled") continue;
-            for (const log of r.value.deposits as {
-              transactionHash: `0x${string}`;
-              blockNumber: bigint;
-              args: { assets: bigint; shares: bigint };
-            }[]) {
-              deposits.push({
-                kind: "Deposit",
-                vaultAddress: v.vaultAddress,
-                vaultName: v.name,
-                assets: log.args.assets,
-                shares: log.args.shares,
-                blockNumber: log.blockNumber,
-                txHash: log.transactionHash,
-              });
+
+            const batchResults = await Promise.allSettled(batchPromises);
+
+            for (const r of batchResults) {
+              if (r.status !== "fulfilled") continue;
+              for (const log of r.value.deposits as {
+                transactionHash: `0x${string}`;
+                blockNumber: bigint;
+                args: { assets: bigint; shares: bigint };
+              }[]) {
+                deposits.push({
+                  kind: "Deposit",
+                  vaultAddress: v.vaultAddress,
+                  vaultName: v.name,
+                  assets: log.args.assets,
+                  shares: log.args.shares,
+                  blockNumber: log.blockNumber,
+                  txHash: log.transactionHash,
+                });
+              }
+              for (const log of r.value.withdraws as {
+                transactionHash: `0x${string}`;
+                blockNumber: bigint;
+                args: { assets: bigint; shares: bigint };
+              }[]) {
+                withdraws.push({
+                  kind: "Withdraw",
+                  vaultAddress: v.vaultAddress,
+                  vaultName: v.name,
+                  assets: log.args.assets,
+                  shares: log.args.shares,
+                  blockNumber: log.blockNumber,
+                  txHash: log.transactionHash,
+                });
+              }
             }
-            for (const log of r.value.withdraws as {
-              transactionHash: `0x${string}`;
-              blockNumber: bigint;
-              args: { assets: bigint; shares: bigint };
-            }[]) {
-              withdraws.push({
-                kind: "Withdraw",
-                vaultAddress: v.vaultAddress,
-                vaultName: v.name,
-                assets: log.args.assets,
-                shares: log.args.shares,
-                blockNumber: log.blockNumber,
-                txHash: log.transactionHash,
-              });
-            }
           }
+
+          if (cancelled) break;
           result.set(v.vaultAddress, { deposits, withdraws });
         }
 
