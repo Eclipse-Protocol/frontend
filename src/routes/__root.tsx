@@ -97,13 +97,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Eclipse Protocol is a confidential asset management platform for private trading strategies." },
       { property: "og:description", content: "Eclipse Protocol is a confidential asset management platform for private trading strategies." },
       { name: "twitter:description", content: "Eclipse Protocol is a confidential asset management platform for private trading strategies." },
-      { property: "og:image", content: "https://eclipse-protocol-delta.vercel.app/logo.jpeg" },
-      { name: "twitter:image", content: "https://eclipse-protocol-delta.vercel.app/logo.jpeg" },
+      { property: "og:image", content: "https://eclipse-protocol-delta.vercel.app/logo.png" },
+      { name: "twitter:image", content: "https://eclipse-protocol-delta.vercel.app/logo.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/logo.jpeg", type: "image/jpeg" },
-      { rel: "apple-touch-icon", href: "/logo.jpeg" },
+      { rel: "icon", href: "/logo.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/logo.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

@@ -13,17 +13,10 @@ Built for the **Flare Summer Signal Hackathon** — FDC (Flare Data Connector) t
 ## Live links
 
 - **App**: https://eclipse-protocol-delta.vercel.app/
-- **Demo video (YouTube)**: https://youtu.be/lRnY07jnV-M
-- **Demo video (Vimeo)**: https://vimeo.com/1218172419
-- A local copy of the demo recording is also included in this repo at
-  [`Photos_Videos/Eclipse_Protocol_LiveDemo.mp4`](./Photos_Videos/Eclipse_Protocol_LiveDemo.mp4).
-- **Network**: Coston2 testnet (chain id `114`) — every number the app shows is a live read from
-  Coston2, not mocked or seeded data.
+- **Demo video**: https://youtu.be/lRnY07jnV-M
 
-Other repos in this project:
-- Contracts: [`Eclipse-Protocol/contracts`](https://github.com/Eclipse-Protocol/contracts) — full
-  deployment addresses and incident history in that repo's `DEPLOYMENT.md`.
-- Backend (enclave + relayer): [`Eclipse-Protocol/backend`](https://github.com/Eclipse-Protocol/backend)
+Deployment addresses, network details, and the other repos in this project are documented in the
+backend repo's README.
 
 ---
 
